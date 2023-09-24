@@ -3,19 +3,18 @@ import {Schema, model} from 'mongoose';
 import {Cat} from '../../interfaces/Cat';
 
 const catSchema = new Schema<Cat>({
-  _id: {type: String, required: true, unique: true},
-  cat_name: {type: String, required: true},
+  cat_name: {type: String, required: true, minlength: 2},
   weight: {type: Number, required: true},
   filename: {type: String, required: true, unique: true},
   birthdate: {type: Date, required: true, max: Date.now()},
   location: {
-    type: {type: String, enum: ['Point'], required: true},
-    coordinates: {type: [Number], required: true},
+    type: {type: String, enum: ['Point']},
+    coordinates: {type: [Number]},
   },
   owner: {
-    _id: {type: String, required: true},
-    user_name: {type: String, required: true},
-    email: {type: String, required: true, unique: true},
+    _id: {type: String},
+    user_name: {type: String},
+    email: {type: String},
   },
 });
 

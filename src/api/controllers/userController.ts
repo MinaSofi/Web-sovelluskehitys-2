@@ -8,11 +8,12 @@
 
 import {Request, Response, NextFunction} from 'express';
 import CustomError from '../../classes/CustomError';
-import {User} from '../../interfaces/User';
+import {User, UserOutput} from '../../interfaces/User';
 import userModel from '../models/userModel';
 import {validationResult} from 'express-validator';
 import bcrypt from 'bcrypt';
 import DBMessageResponse from '../../interfaces/DBMessageResponse';
+const salt = bcrypt.genSaltSync(12);
 
 const userGet = async (
   req: Request<{id: string}, {}, {}>,
@@ -20,9 +21,23 @@ const userGet = async (
   next: NextFunction
 ) => {
   try {
-    const user = await userModel.findById(req.params.id);
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const messages = errors
+        .array()
+        .map((error) => `${error.msg}: ${error.param}`)
+        .join(', ');
+      next(new CustomError(messages, 400));
+      return;
+    }
+
+    const user = await userModel
+      .findById(req.params.id)
+      .select('-password -__v');
     if (!user) {
       throw new CustomError('User not found', 404);
+      return;
     }
     res.json(user);
   } catch (err) {
@@ -32,7 +47,11 @@ const userGet = async (
 
 const userListGet = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await userModel.find();
+    const users = await userModel.find().select('role -__v');
+    if (!users || users.length === 0) {
+      next(new CustomError('No users found', 404));
+      return;
+    }
     res.json(users);
   } catch (err) {
     next(err);
@@ -57,16 +76,20 @@ const userPost = async (
     }
 
     const user = req.body;
-    user.password = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await bcrypt.hash(user.password, salt);
+    const userData = {
+      ...user,
+      password: hashedPassword,
+    };
 
-    const newUser = await userModel.create(user);
+    const newUser = await userModel.create(userData);
     const response: DBMessageResponse = {
       message: 'User created successfully',
       data: {
         _id: newUser._id,
         user_name: newUser.user_name,
         email: newUser.email,
-      },
+      } as UserOutput,
     };
 
     res.json(response);
@@ -110,7 +133,7 @@ const userPutCurrent = async (
           _id: updatedUser._id,
           user_name: updatedUser.user_name,
           email: updatedUser.email,
-        },
+        } as UserOutput,
       };
 
       res.json(response);
@@ -121,11 +144,22 @@ const userPutCurrent = async (
 };
 
 const userDeleteCurrent = async (
-  req: Request,
+  req: Request<{id: string}, {}, {}>,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const messages = errors
+        .array()
+        .map((error) => `${error.msg}: ${error.param}`)
+        .join(', ');
+      next(new CustomError(messages, 400));
+      return;
+    }
+
     const deletedUser = await userModel.findByIdAndDelete(
       (req.user as User)._id
     );
@@ -137,7 +171,7 @@ const userDeleteCurrent = async (
           _id: deletedUser._id,
           user_name: deletedUser.user_name,
           email: deletedUser.email,
-        },
+        } as UserOutput,
       };
 
       res.json(response);

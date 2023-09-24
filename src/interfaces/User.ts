@@ -2,7 +2,6 @@
 import {Document} from 'mongoose';
 
 interface User extends Document {
-  _id: string;
   user_name: string;
   email: string;
   role: 'user' | 'admin';
@@ -16,14 +15,13 @@ interface UserOutput {
 }
 
 interface UserTest {
-  user_name?: string;
-  email?: string;
-  password?: string;
+  user_name: string;
+  email: string;
+  password: string;
 }
 
-interface LoginUser {
+interface LoginUser extends User {
   username: string;
-  password: string;
 }
 
 export {User, UserOutput, UserTest, LoginUser};

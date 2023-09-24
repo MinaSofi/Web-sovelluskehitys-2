@@ -35,6 +35,11 @@ router
   .route('/')
   .get(catListGet)
   .post(
+    body('cat_name').isLength({min: 2}).isString().escape(),
+    body('weight').isInt({min: 2}),
+    body('filename').isString().escape(),
+    body('birthdate').isDate(),
+    body('location').isString().escape(),
     passport.authenticate('jwt', {session: false}),
     upload.single('cat'),
     makeThumbnail,

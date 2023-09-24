@@ -3,11 +3,10 @@ import {Schema, model} from 'mongoose';
 import {User} from '../../interfaces/User';
 
 const userSchema = new Schema<User>({
-  _id: {type: String, required: true, unique: true},
-  user_name: {type: String, required: true},
-  email: {type: String, required: true, unique: true},
-  role: {type: String, enum: ['admin', 'user'], required: true},
-  password: {type: String, required: true},
+  user_name: {type: String, required: true, minlength: 2, unique: true},
+  email: {type: String, required: true, minlength: 6, unique: true},
+  role: {type: String, enum: ['admin', 'user']},
+  password: {type: String, required: true, minlength: 5},
 });
 
 export default model<User>('User', userSchema);
